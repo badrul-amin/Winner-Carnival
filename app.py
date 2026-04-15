@@ -4,8 +4,8 @@ from openpyxl import load_workbook
 from openpyxl.styles import PatternFill
 import io
 
-st.set_page_config(page_title="Official Winner Selection", layout="wide")
-st.title("🎰 Official Winner Selection System")
+st.set_page_config(page_title="AEON Carnival Winner Selector", layout="wide")
+st.title("🎉 AEON Carnival Winner Selector")
 
 uploaded_file = st.file_uploader("Upload Excel File", type=["xlsx"])
 
