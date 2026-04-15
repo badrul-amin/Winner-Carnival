@@ -4,9 +4,21 @@ from openpyxl import load_workbook
 from openpyxl.styles import PatternFill
 import io
 
-st.set_page_config(page_title="AEON Carnival Winner Selector", layout="wide")
-st.title("🎉 AEON Carnival Winner Selector")
+# ======================================================
+# 🎉 PAGE CONFIG
+# ======================================================
+st.set_page_config(
+    page_title="AEON Carnival Winner Selector",
+    layout="wide",
+    page_icon="🎉"
+)
 
+st.title("🎉 AEON Carnival Winner Selector")
+st.markdown("---")
+
+# ======================================================
+# 📂 UPLOAD FILE
+# ======================================================
 uploaded_file = st.file_uploader("Upload Excel File", type=["xlsx"])
 
 if uploaded_file:
@@ -28,6 +40,7 @@ if uploaded_file:
 
     df.columns = df.columns.astype(str).str.strip()
     df.rename(columns=COLUMN_MAP, inplace=True)
+
     df["Store Code"] = df["Store Code"].astype(str).str.strip()
     df["Member ID"] = df["Member ID"].astype(str).str.strip()
     df["Original Store Code"] = df["Store Code"]
@@ -35,7 +48,7 @@ if uploaded_file:
     STORE_ALIAS = {"5603": "1015"}
     df["Store Code"] = df["Store Code"].replace(STORE_ALIAS)
 
-    st.success("File processed successfully!")
+    st.success("✅ File processed successfully!")
 
     # ======================================================
     # 2️⃣ PARAMETERS
@@ -58,7 +71,7 @@ if uploaded_file:
     BACKUPS_PER_STORE = 5
 
     # ======================================================
-    # RUN BUTTON
+    # 🚀 RUN BUTTON
     # ======================================================
     if st.button("🚀 Run Winner Selection"):
 
@@ -66,9 +79,10 @@ if uploaded_file:
         selected_members = set()
 
         # ======================================================
-        # 3️⃣ STORE SPECIFIC
+        # 3️⃣ STORE SPECIFIC SELECTION
         # ======================================================
         for store, main_count in overrides.items():
+
             pool = df[df["Store Code"] == store].copy()
 
             if not ALLOW_MULTIPLE_WINS:
@@ -85,7 +99,7 @@ if uploaded_file:
             if not ALLOW_MULTIPLE_WINS:
                 selected_members.update(mains["Member ID"])
 
-            backups = pool.iloc[main_count : main_count + BACKUPS_PER_STORE].copy()
+            backups = pool.iloc[main_count: main_count + BACKUPS_PER_STORE].copy()
             backups["Winner Type"] = "Backup"
 
             if not ALLOW_MULTIPLE_WINS:
@@ -95,7 +109,7 @@ if uploaded_file:
             store_results.append(backups)
 
         # ======================================================
-        # 4️⃣ ANY STORE
+        # 4️⃣ ANY STORE POOL
         # ======================================================
         any_store_pool = df[~df["Member ID"].isin(selected_members)].copy()
         any_store_pool = any_store_pool.sample(frac=1, random_state=99).reset_index(drop=True)
@@ -107,7 +121,7 @@ if uploaded_file:
         any_backups["Winner Type"] = "Backup"
 
         # ======================================================
-        # 5️⃣ SAVE TO EXCEL (MEMORY)
+        # 5️⃣ SAVE TO EXCEL (IN MEMORY)
         # ======================================================
         output = io.BytesIO()
 
@@ -127,7 +141,7 @@ if uploaded_file:
             df_sheet2.to_excel(writer, index=False, sheet_name="AnyStoreWinners")
 
         # ======================================================
-        # 🎨 HIGHLIGHT COLORS
+        # 🎨 COLOR HIGHLIGHTING
         # ======================================================
         output.seek(0)
         wb = load_workbook(output)
@@ -138,19 +152,30 @@ if uploaded_file:
         for sheet_name in wb.sheetnames:
             ws = wb[sheet_name]
             header = [cell.value for cell in ws[1]]
+
             if "Winner Type" in header:
                 type_col = header.index("Winner Type") + 1
+
                 for row in ws.iter_rows(min_row=2, max_row=ws.max_row):
                     w_type = row[type_col - 1].value
                     color = fill_main if w_type == "Main" else fill_backup
+
                     for cell in row:
                         cell.fill = color
 
         final_output = io.BytesIO()
         wb.save(final_output)
 
-        st.success("✅ Selection Complete!")
+        # ======================================================
+        # 🎉 SUCCESS + CONFETTI
+        # ======================================================
+        st.success("🎉 Selection Complete!")
 
+        st.balloons()  # 🎈 CONFETTI EFFECT
+
+        # ======================================================
+        # ⬇️ DOWNLOAD
+        # ======================================================
         st.download_button(
             label="⬇️ Download Official Winners File",
             data=final_output.getvalue(),
